@@ -15,14 +15,13 @@ export const SchemaModal: React.FC<{
   const { projectId } = useParams()
   const ctx = useConcent('schema')
 
-  // 创建/更新原型
+  // 创建/更新模型
   const { run, loading } = useRequest(
     async (data: SchemaV2) => {
       const { displayName, collectionName, description } = data
 
       if (action === 'create') {
-        await createSchema({
-          projectId,
+        await createSchema(projectId, {
           displayName,
           collectionName,
           description,
@@ -40,7 +39,7 @@ export const SchemaModal: React.FC<{
             {}
           )
 
-        await updateSchema(schema?._id, diffData)
+        await updateSchema(projectId, schema?._id, diffData)
       }
 
       onClose()
@@ -48,8 +47,8 @@ export const SchemaModal: React.FC<{
     },
     {
       manual: true,
-      onError: () => message.error(`${action === 'create' ? '创建' : '更新'}原型失败`),
-      onSuccess: () => message.success(`${action === 'create' ? '创建' : '更新'}原型成功`),
+      onError: () => message.error(`${action === 'create' ? '创建' : '更新'}模型失败`),
+      onSuccess: () => message.success(`${action === 'create' ? '创建' : '更新'}模型成功`),
     }
   )
 
@@ -61,7 +60,7 @@ export const SchemaModal: React.FC<{
       visible={visible}
       onOk={() => onClose()}
       onCancel={() => onClose()}
-      title={`${action === 'create' ? '创建' : '更新'}原型`}
+      title={`${action === 'create' ? '创建' : '更新'}模型`}
     >
       <Form
         name="basic"
@@ -103,7 +102,7 @@ export const SchemaModal: React.FC<{
         </Form.Item>
 
         <Form.Item label="描述" name="description">
-          <TextArea placeholder="原型描述，如博客文章" />
+          <TextArea placeholder="模型描述，如博客文章" />
         </Form.Item>
 
         <Form.Item>
@@ -125,7 +124,9 @@ export const DeleteSchemaModal: React.FC<{
 }> = ({ visible, onClose }) => {
   const { projectId } = useParams()
   const ctx = useConcent('schema')
+  const contentCtx = useConcent('content')
   const { currentSchema = {} } = ctx.state
+  const [loading, setLoading] = useState(false)
   const [deleteCollection, setDeleteCollection] = useState(false)
 
   return (
@@ -135,15 +136,21 @@ export const DeleteSchemaModal: React.FC<{
       title="删除内容模型"
       visible={visible}
       onCancel={() => onClose()}
+      okButtonProps={{
+        loading,
+      }}
       onOk={async () => {
         try {
-          await deleteSchema(currentSchema._id, deleteCollection)
+          setLoading(true)
+          await deleteSchema(projectId, currentSchema._id, deleteCollection)
           message.success('删除内容模型成功！')
           ctx.dispatch('getSchemas', projectId)
+          contentCtx.dispatch('getContentSchemas', projectId)
         } catch (error) {
           message.error('删除内容模型失败！')
         } finally {
           onClose()
+          setLoading(false)
         }
       }}
     >

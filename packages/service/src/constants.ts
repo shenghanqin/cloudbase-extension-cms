@@ -1,23 +1,3 @@
-/**
- * 参考
- * https://cloud.tencent.com/document/product/213/30435
- */
-export enum ErrorCode {
-  // 服务错误
-  ServerError = 'ServerError',
-  // 参数错误
-  UnknownParameter = 'UnknownParameter',
-  MissingParameter = 'MissingParameter',
-  InvalidParameter = 'InvalidParameter',
-  InvalidParameterValue = 'InvalidParameterValue',
-  // 请求超限
-  RequestLimitExceeded = 'RequestLimitExceeded',
-  // 资源
-  ResourceNotFound = 'ResourceNotFound',
-  UnsupportedOperation = 'UnsupportedOperation',
-  UnauthorizedOperation = 'UnauthorizedOperation',
-}
-
 // V1 集合名
 export const CollectionV1 = {
   Schemas: 'tcb-ext-cms-contents',
@@ -46,7 +26,7 @@ export const CollectionV2 = {
   CustomUserRoles: 'tcb-ext-cms-user-roles',
 }
 
-// 系统默认角色
+// 系统角色，无法修改
 export const SystemUserRoles: UserRole[] = [
   {
     _id: 'administrator',
@@ -80,8 +60,8 @@ export const SystemUserRoles: UserRole[] = [
   },
   {
     _id: 'content:administrator',
-    roleName: '系统内容管理员',
-    description: '允许管理系统内的所有内容',
+    roleName: '内容管理员',
+    description: '允许管理系统内，所有项目的所有内容文档',
     permissions: [
       {
         action: ['*'],
@@ -94,3 +74,14 @@ export const SystemUserRoles: UserRole[] = [
     type: 'system',
   },
 ]
+
+// 公开角色，即未登录的用户可访问的资源
+export const PublicRole = {
+  _id: 'public',
+  roleName: '公开用户',
+  description: '未登录的用户允许访问的资源',
+  // 默认为空
+  permissions: [],
+  // 不允许删除
+  delete: false,
+}

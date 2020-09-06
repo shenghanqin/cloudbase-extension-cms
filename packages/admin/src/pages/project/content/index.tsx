@@ -1,108 +1,74 @@
-import { useParams } from 'umi'
+import { Empty, Button, Skeleton } from 'antd'
+import { history, useParams } from 'umi'
 import { useConcent } from 'concent'
 import ProCard from '@ant-design/pro-card'
-import { Menu, Spin, Empty, Row, Col } from 'antd'
 import { PageContainer } from '@ant-design/pro-layout'
-import React, { useEffect, useRef, useState } from 'react'
-import { ContentDrawer } from './components'
+import React, { useEffect, useState } from 'react'
 import { ContentTable } from './ContentTable'
 import './index.less'
 
-export default (): React.ReactNode => {
-  const { projectId } = useParams()
+export default (props: any): React.ReactNode => {
+  const { schemaId, projectId } = useParams()
   const ctx = useConcent('content')
-  const [contentModalVisible, setContentModalVisible] = useState(false)
-
-  // 加载 schemas 数据
-  useEffect(() => {
-    ctx.dispatch('getContentSchemas', projectId)
-  }, [])
-
-  // table 引用
-  const tableRef = useRef<{
-    reload: (resetPageIndex?: boolean) => void
-    reloadAndRest: () => void
-    fetchMore: () => void
-    reset: () => void
-    clearSelected: () => void
-  }>()
+  const [contentLoading, setContentLoading] = useState(false)
 
   const {
-    state: { currentSchema, contentLoading, schemas, loading },
+    state: { schemas },
   } = ctx
 
-  const defaultSelectedMenu = currentSchema ? [currentSchema._id] : []
+  const currentSchema = schemas?.find((item: SchemaV2) => item._id === schemaId)
+
+  // HACK: 切换 schema 时卸载 Table，强制重新加载数据
+  useEffect(() => {
+    setContentLoading(true)
+    setTimeout(() => {
+      setContentLoading(false)
+    }, 200)
+  }, [currentSchema])
 
   return (
     <PageContainer className="page-container">
-      <ProCard split="vertical" gutter={[16, 16]} style={{ background: 'inherit' }}>
-        <ProCard colSpan="220px" className="left-card" style={{ marginBottom: 0 }}>
-          {loading ? (
-            <Row justify="center">
-              <Col>
-                <Spin />
-              </Col>
-            </Row>
-          ) : schemas?.length ? (
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={defaultSelectedMenu}
-              onClick={({ key }) => {
-                const schema = schemas.find((item: SchemaV2) => item._id === key)
-
-                ctx.setState({
-                  contentLoading: true,
-                  currentSchema: schema,
-                })
-
-                if (tableRef?.current) {
-                  tableRef.current?.reset()
-                }
-
-                setTimeout(() => {
-                  if (tableRef?.current) {
-                    ctx.setState({
-                      contentLoading: false,
-                    })
-                    tableRef.current?.reloadAndRest()
-                  }
-                }, 30)
-              }}
+      <ProCard className="content-card" style={{ marginBottom: 0 }}>
+        {currentSchema ? (
+          contentLoading ? (
+            <Skeleton active />
+          ) : currentSchema?.fields?.length ? (
+            <ContentTable currentSchema={currentSchema} />
+          ) : (
+            <Empty description="当前内容模型字段为空，请添加字段后再创建内容">
+              <Button
+                type="primary"
+                onClick={() => {
+                  history.push(`/${projectId}/schema`)
+                }}
+              >
+                添加字段
+              </Button>
+            </Empty>
+          )
+        ) : (
+          <div className="content-empty">
+            <Empty
+              description={
+                <>
+                  <span>内容模型为空 🤔</span>
+                  <br />
+                  <span>请先创建你的内容模型，再创建内容文档</span>
+                </>
+              }
             >
-              {schemas.map((item: SchemaV2) => (
-                <Menu.Item key={item._id}>{item.displayName}</Menu.Item>
-              ))}
-            </Menu>
-          ) : (
-            <Row justify="center">
-              <Col>内容数据为空</Col>
-            </Row>
-          )}
-        </ProCard>
-        <ProCard className="content-card" style={{ marginBottom: 0 }}>
-          {currentSchema ? (
-            contentLoading ? null : (
-              <ContentTable
-                tableRef={tableRef}
-                setModalVisible={(visible: boolean) => setContentModalVisible(visible)}
-              />
-            )
-          ) : (
-            <div className="content-empty">
-              <Empty description="创建你的原型，开始使用 CMS">未选择内容</Empty>
-            </div>
-          )}
-        </ProCard>
+              <Button
+                type="primary"
+                onClick={() => {
+                  history.push(`/${projectId}/schema`)
+                }}
+              >
+                创建模型
+              </Button>
+            </Empty>
+          </div>
+        )}
       </ProCard>
-      <ContentDrawer
-        schema={currentSchema}
-        visible={contentModalVisible}
-        onClose={() => setContentModalVisible(false)}
-        onOk={() => {
-          setContentModalVisible(false)
-          tableRef?.current?.reload()
-        }}
-      />
     </PageContainer>
   )
 }

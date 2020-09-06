@@ -1,8 +1,8 @@
 import { useParams } from 'umi'
 import { useConcent } from 'concent'
 import ProCard from '@ant-design/pro-card'
-import React, { useState, useEffect } from 'react'
-import { PlusCircleTwoTone, EditOutlined } from '@ant-design/icons'
+import React, { useState, useEffect, useCallback } from 'react'
+import { PlusOutlined, EditTwoTone, DeleteTwoTone } from '@ant-design/icons'
 import {
   Card,
   Layout,
@@ -15,7 +15,6 @@ import {
   message,
   Empty,
   Space,
-  Popover,
   Typography,
   Tooltip,
 } from 'antd'
@@ -59,20 +58,31 @@ export default (): React.ReactNode => {
     ctx.dispatch('getSchemas', projectId)
   }, [])
 
-  const defaultSelectedMenu = currentSchema ? [currentSchema._id] : []
+  const defaultSelectedMenu = currentSchema?._id ? [currentSchema._id] : []
+
+  const editFiled = useCallback((field: SchemaFieldV2) => {
+    ctx.setState({
+      fieldAction: 'edit',
+      selectedField: field,
+    })
+    setFieldVisible(true)
+  }, [])
 
   return (
     <PageContainer
       className="schema-page-container"
       extra={
         <h2 className="full-height">
-          <PlusCircleTwoTone
-            style={{ fontSize: '20px' }}
+          <Button
+            type="primary"
             onClick={() => {
               setSchemaVisible(true)
               setSchemaAction('create')
             }}
-          />
+          >
+            <PlusOutlined />
+            新建模型
+          </Button>
         </h2>
       }
     >
@@ -102,7 +112,7 @@ export default (): React.ReactNode => {
             </Menu>
           ) : (
             <Row justify="center">
-              <Col>原型为空</Col>
+              <Col>模型为空</Col>
             </Row>
           )}
         </ProCard>
@@ -115,38 +125,19 @@ export default (): React.ReactNode => {
                 <Col flex="0 1 600px">
                   <Space className="schema-layout-header">
                     <Typography.Title level={3}>{currentSchema.displayName}</Typography.Title>
-                    <Popover
-                      placement="bottom"
-                      content={
-                        <Space>
-                          <Button
-                            type="primary"
-                            size="small"
-                            onClick={() => {
-                              setSchemaVisible(true)
-                              setSchemaAction('edit')
-                            }}
-                          >
-                            编辑原型
-                          </Button>
-                          <Button
-                            danger
-                            type="primary"
-                            size="small"
-                            onClick={() => setDeleteSchmeaVisible(true)}
-                          >
-                            删除原型
-                          </Button>
-                        </Space>
-                      }
-                    >
-                      <EditOutlined
-                        style={{
-                          fontSize: '18px',
+                    <Space size="middle">
+                      <EditTwoTone
+                        style={{ fontSize: '16px' }}
+                        onClick={() => {
+                          setSchemaVisible(true)
+                          setSchemaAction('edit')
                         }}
-                        onClick={() => {}}
                       />
-                    </Popover>
+                      <DeleteTwoTone
+                        style={{ fontSize: '16px' }}
+                        onClick={() => setDeleteSchmeaVisible(true)}
+                      />
+                    </Space>
                     {currentSchema.description && (
                       <Tooltip title={currentSchema.description}>
                         <Typography.Text
@@ -164,18 +155,16 @@ export default (): React.ReactNode => {
                   <Content>
                     {currentSchema?.fields?.length ? (
                       <SchemaFieldRender
+                        onFiledClick={(field) => editFiled(field)}
                         schema={currentSchema}
                         actionRender={(field) => (
-                          <>
+                          <Space>
                             <Button
                               size="small"
                               type="primary"
-                              onClick={() => {
-                                ctx.setState({
-                                  fieldAction: 'edit',
-                                  selectedField: field,
-                                })
-                                setFieldVisible(true)
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                editFiled(field)
                               }}
                             >
                               编辑
@@ -184,7 +173,8 @@ export default (): React.ReactNode => {
                               danger
                               size="small"
                               type="primary"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 ctx.setState({
                                   selectedField: field,
                                 })
@@ -193,7 +183,7 @@ export default (): React.ReactNode => {
                             >
                               删除
                             </Button>
-                          </>
+                          </Space>
                         )}
                       />
                     ) : (
@@ -207,7 +197,7 @@ export default (): React.ReactNode => {
               </Row>
             ) : (
               <div className="schema-empty">
-                <Empty description="创建你的原型，开始使用 CMS">
+                <Empty description="创建你的模型，开始使用 CMS">
                   <Button
                     type="primary"
                     onClick={() => {
@@ -215,7 +205,7 @@ export default (): React.ReactNode => {
                       setSchemaAction('create')
                     }}
                   >
-                    创建原型
+                    创建模型
                   </Button>
                 </Empty>
               </div>
@@ -224,7 +214,7 @@ export default (): React.ReactNode => {
 
           <Sider className="schema-sider" width="220">
             <Typography.Title level={3} className="schema-sider-header">
-              原型类型
+              模型类型
             </Typography.Title>
             <List
               bordered={false}
@@ -235,7 +225,7 @@ export default (): React.ReactNode => {
                   className="field-card"
                   onClick={() => {
                     if (!currentSchema) {
-                      message.info('请选择需要编辑的原型')
+                      message.info('请选择需要编辑的模型')
                       return
                     }
                     ctx.setState({

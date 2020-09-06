@@ -13,7 +13,7 @@ import { TimeCost } from './interceptors/timecost.interceptor'
 import { TimeoutInterceptor } from './interceptors/timeout.interceptor'
 import { ContextInterceptor } from './interceptors/context.interceptor'
 
-import { AllExceptionsFilter } from './global.exception'
+import { AllExceptionsFilter } from './exceptions.filter'
 import config from './config'
 
 const expressApp = express()
@@ -62,7 +62,8 @@ export async function bootstrap() {
   // hide x-powered-by: express header
   app.disable('x-powered-by')
 
-  app.setGlobalPrefix('/api')
+  // API 版本
+  app.setGlobalPrefix(config.globalPrefix)
 
   // 兼容云函数与本地开发
   if (process.env.NODE_ENV === 'development') {

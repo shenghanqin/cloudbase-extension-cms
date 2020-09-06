@@ -27,21 +27,48 @@ module.exports = {
       roles: ['administrator'],
       config,
       db,
+      root: true,
+    })
+  },
+  // 创建运营人员账号
+  async createOperator(context) {
+    const { operatorName, operatorPassword, config, db, manager } = context
+
+    if (!operatorName || !operatorPassword) return
+
+    return saveUser({
+      manager,
+      createTime: Date.now(),
+      username: operatorName,
+      password: operatorPassword,
+      roles: ['content:administrator'],
+      config,
+      db,
     })
   },
 }
 
 // 保存用户
-async function saveUser({ createTime, username, password, roles, db, config, manager }) {
+async function saveUser({ createTime, username, password, roles, db, config, manager, root }) {
   await manager.database.createCollectionIfNotExists(config.usersCollectionName)
 
   const collection = db.collection(config.usersCollectionName)
-  const dbRecords = await collection.where({ username }).get()
+  const {
+    data: [dbRecord],
+  } = await collection.where({ username }).get()
+
+  console.log(dbRecord)
+
+  // 用户已存在
+  if (dbRecord && dbRecord.uuid) {
+    return
+  }
 
   const data = {
     username,
     createTime,
     roles,
+    root,
   }
 
   // 注册用户
@@ -54,7 +81,7 @@ async function saveUser({ createTime, username, password, roles, db, config, man
   data.uuid = User.UUId
 
   // 如果用户已经存在，则进行 update（有可能账号密码修改））
-  if (dbRecords.data.length) {
+  if (dbRecord) {
     return collection.where({ username }).update(data)
   }
 

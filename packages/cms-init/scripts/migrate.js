@@ -18,33 +18,15 @@ async function migrateUsers(context) {
   let result = await manager.database.checkCollectionExists(userCollection)
   if (!result.Exists) return
 
-  // 将 userName 重名为 username
+  // 删除老的用户
   const $ = db.command
   await db
     .collection(userCollection)
-    .where({})
-    .update({
-      userName: $.rename('username'),
-    })
-
-  // 迁移管理员和运营人员
-  await db
-    .collection(userCollection)
     .where({
-      role: 'administrator',
+      userName: $.exists(true),
+      uuid: $.exists(false),
     })
-    .update({
-      roles: ['administrator'],
-    })
-
-  await db
-    .collection(userCollection)
-    .where({
-      role: 'operator',
-    })
-    .update({
-      roles: ['content:administrator'],
-    })
+    .remove()
 }
 
 // 创建项目
@@ -57,7 +39,8 @@ async function createProject(context) {
 
   if (!data || !data.length) {
     const { id, _id } = await db.collection(projectCollection).add({
-      name: 'V1 项目',
+      name: 'V1 内容',
+      customId: 'default',
       description: 'CloudBase CMS V1 版本数据',
     })
     return id || _id
@@ -66,7 +49,7 @@ async function createProject(context) {
   }
 }
 
-// 迁移原型
+// 迁移模型
 async function migrateSchemas(context, projectId) {
   const { db, manager } = context
 
@@ -134,7 +117,7 @@ async function migrateSchemas(context, projectId) {
 
     console.log(targetSchema)
 
-    // 跳过已存在的原型
+    // 跳过已存在的模型
     if (targetSchema && targetSchema.length) return
 
     await db.collection(schemaCollection).add(newSchema)

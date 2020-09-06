@@ -1,7 +1,7 @@
 import { ProColumns } from '@ant-design/pro-table'
 import { getFieldRender } from './components'
 
-type DateTime = 'dateTime' | 'textarea'
+type DateTime = 'dateTime' | 'date' | 'textarea'
 
 const TypeWidthMap = {
   String: 150,
@@ -10,9 +10,9 @@ const TypeWidthMap = {
   Boolean: 100,
   DateTime: 150,
   File: 150,
-  Image: 150,
-  RichText: 200,
-  Markdown: 200,
+  Image: 200,
+  RichText: 150,
+  Markdown: 150,
 }
 
 const hideInSearchType = ['File', 'Image', 'Array', 'Date', 'DateTime']
@@ -23,7 +23,8 @@ export const getTableColumns = (fields: SchemaFieldV2[] = []): ProColumns[] => {
     .map((field) => {
       const { name, type, displayName, isHidden } = field
 
-      const valueType: DateTime = type === 'DateTime' ? 'dateTime' : 'textarea'
+      const valueType: DateTime =
+        type === 'DateTime' ? 'dateTime' : type === 'Date' ? 'date' : 'textarea'
 
       const render = getFieldRender(field)
 
@@ -66,5 +67,46 @@ export const getTableColumns = (fields: SchemaFieldV2[] = []): ProColumns[] => {
 
       return column
     })
+
+  columns.push(
+    {
+      width: 150,
+      sorter: true,
+      filters: true,
+      align: 'center',
+      title: '创建时间 💻',
+      hideInSearch: true,
+      dataIndex: '_createTime',
+      valueType: 'dateTime',
+    },
+    {
+      width: 150,
+      sorter: true,
+      filters: true,
+      dataIndex: '_updateTime',
+      align: 'center',
+      title: '更新时间 💻',
+      hideInSearch: true,
+      valueType: 'dateTime',
+    }
+  )
+
+  columns.unshift({
+    title: '序号',
+    width: 72,
+    align: 'center',
+    valueType: 'indexBorder',
+    render: (
+      text: React.ReactNode,
+      record: any,
+      index: number,
+      action: any
+    ): React.ReactNode | React.ReactNode[] => {
+      const { current, pageSize } = action
+      const serial = Number(pageSize) * (Number(current) - 1) + index + 1
+      return serial
+    },
+  })
+
   return columns
 }

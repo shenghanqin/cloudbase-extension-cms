@@ -22,7 +22,6 @@ export class GlobalAuthGuard implements CanActivate {
         roles: ['administrator'],
         username: 'admin',
         createTime: 2020,
-        password: 'cloudbase',
         isAdmin: true,
         uuid: 'xxx',
       }
@@ -32,32 +31,41 @@ export class GlobalAuthGuard implements CanActivate {
       //     roles: ['content:administrator'],
       //     username: 'admin',
       //     createTime: 2020,
-      //     password: 'cloudbase',
       //     uuid: 'xxx'
+      // }
+
+      // request.cmsUser = {
+      //   _id: 'test',
+      //   roles: ['public'],
+      //   username: '_anonymous',
+      //   createTime: 2020,
+      //   isAdmin: false,
+      //   uuid: '',
       // }
 
       return true
     }
 
-    // 登录的用户
+    // 获取用户信息
     // 目前只在云函数中能自动获取用户身份信息
     const app = getCloudBaseApp()
     const { TCB_UUID } = cloudbase.getCloudbaseContext()
-
-    console.log('用户 ID', TCB_UUID)
-
     const { userInfo } = await app.auth().getEndUserInfo(TCB_UUID)
 
-    console.log('用户信息', userInfo)
+    console.log(userInfo)
 
+    // 未登录用户
     if (!userInfo?.username) {
-      throw new HttpException(
-        {
-          code: 'NO_AUTH',
-          message: '未登录用户',
-        },
-        HttpStatus.FORBIDDEN
-      )
+      request.cmsUser = {
+        _id: 'test',
+        roles: ['public'],
+        username: '_anonymous',
+        createTime: 2020,
+        isAdmin: false,
+        uuid: '',
+      }
+
+      return true
     }
 
     const {
@@ -74,8 +82,10 @@ export class GlobalAuthGuard implements CanActivate {
     if (!userRecord) {
       throw new HttpException(
         {
-          code: 'AUTH_EXPIRED',
-          message: '用户不存在，请确认登录信息！',
+          error: {
+            code: 'AUTH_EXPIRED',
+            message: '用户不存在，请确认登录信息！',
+          },
         },
         HttpStatus.FORBIDDEN
       )

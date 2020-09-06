@@ -3,7 +3,6 @@ import { Settings as LayoutSettings } from '@ant-design/pro-layout'
 
 export default {
   navTheme: 'light',
-  // 拂晓蓝
   primaryColor: '#0052d9',
   layout: 'mix',
   contentWidth: 'Fluid',
@@ -16,6 +15,9 @@ export default {
   title: 'CloudBase CMS',
   pwa: false,
   iconfontUrl: '',
+  // 请求 prefix
+  globalPrefix: '/api/v1.0',
 } as LayoutSettings & {
   pwa: boolean
+  globalPrefix: string
 }

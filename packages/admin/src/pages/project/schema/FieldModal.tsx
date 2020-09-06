@@ -3,6 +3,8 @@ import { useParams, useRequest } from 'umi'
 import { useConcent } from 'concent'
 import { updateSchema } from '@/services/schema'
 import {
+  Row,
+  Col,
   Modal,
   Form,
   message,
@@ -13,8 +15,7 @@ import {
   Select,
   InputNumber,
   Typography,
-  Row,
-  Col,
+  Alert,
 } from 'antd'
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons'
 
@@ -24,11 +25,15 @@ const { Option } = Select
 // 不能设置默认值的类型
 const negativeTypes = ['File', 'Image', 'Array', 'Connect']
 
+// 保留字段名
+const ReservedFieldNames = ['_id', '_createTime', '_updateTime', '_status']
+
 export const CreateFieldModal: React.FC<{
   visible: boolean
   onClose: () => void
 }> = ({ visible, onClose }) => {
   const ctx = useConcent('schema')
+  const contentCtx = useConcent('content')
   const { projectId } = useParams()
   const [formValue, setFormValue] = useState<any>()
   const [connectSchema, setConnectSchema] = useState<SchemaV2>()
@@ -83,11 +88,13 @@ export const CreateFieldModal: React.FC<{
       }
 
       // 更新 schema fields
-      await updateSchema(currentSchema?._id, {
+      await updateSchema(projectId, currentSchema?._id, {
         fields,
       })
 
       ctx.dispatch('getSchemas', projectId)
+      contentCtx.dispatch('getContentSchemas', projectId)
+
       onClose()
     },
     {
@@ -102,7 +109,7 @@ export const CreateFieldModal: React.FC<{
 
   const modalTitle =
     fieldAction === 'create'
-      ? `新建【${selectedField?.name}】字段`
+      ? `添加【${selectedField?.name}】字段`
       : `编辑【${selectedField?.displayName}】`
 
   useEffect(() => {
@@ -111,6 +118,8 @@ export const CreateFieldModal: React.FC<{
       setConnectSchema(schema)
     }
   }, [selectedField])
+
+  const isFieldNameReserved = ReservedFieldNames.includes(formValue?.name)
 
   return (
     <Modal
@@ -123,6 +132,10 @@ export const CreateFieldModal: React.FC<{
       onOk={() => onClose()}
       onCancel={() => onClose()}
     >
+      {fieldAction === 'create' && selectedField.desc && (
+        <Alert type="info" message={selectedField.desc} />
+      )}
+      <br />
       <Form
         name="basic"
         layout="vertical"
@@ -160,9 +173,19 @@ export const CreateFieldModal: React.FC<{
         >
           <Input placeholder="数据库字段名，如 title" />
         </Form.Item>
+        {/^_/.test(formValue?.name) && (
+          <Alert
+            message="系统会使用 _ 开头的单词作为系统字段名，为了避免和系统字段冲突，建议您使用其他命名规则"
+            type="warning"
+          />
+        )}
+
+        {isFieldNameReserved && (
+          <Alert message={`${formValue.name} 是系统保留字段，请使用其他名称`} type="error" />
+        )}
 
         <Form.Item label="描述" name="description">
-          <TextArea placeholder="原型描述，如博客文章标题" />
+          <TextArea placeholder="模型描述，如博客文章标题" />
         </Form.Item>
 
         {selectedField?.type === 'Connect' && (
@@ -195,7 +218,7 @@ export const CreateFieldModal: React.FC<{
                         </Option>
                       ))
                     ) : (
-                      <Option value="" key={selectedField.name}>
+                      <Option value="" key={selectedField.name} disabled>
                         空
                       </Option>
                     )}
@@ -206,10 +229,16 @@ export const CreateFieldModal: React.FC<{
             <Form.Item>
               <div className="form-item">
                 <Form.Item name="connectMany" valuePropName="checked" style={{ marginBottom: 0 }}>
-                  <Switch />
+                  <Switch disabled={fieldAction === 'edit'} />
                 </Form.Item>
                 <Form.Item style={{ marginBottom: 0 }}>
                   <span>是否关联多项（支持选择多个关联文档）</span>
+                  {fieldAction === 'edit' && (
+                    <>
+                      <br />
+                      <Typography.Text type="warning">关联多项与关联单项无法转换</Typography.Text>
+                    </>
+                  )}
                 </Form.Item>
               </div>
             </Form.Item>
@@ -376,7 +405,12 @@ export const CreateFieldModal: React.FC<{
         <Form.Item>
           <Space size="large" style={{ width: '100%', justifyContent: 'flex-end' }}>
             <Button onClick={() => onClose()}>取消</Button>
-            <Button type="primary" htmlType="submit" loading={loading}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              disabled={isFieldNameReserved}
+            >
               {fieldAction === 'create' ? '添加' : '更新'}
             </Button>
           </Space>
@@ -392,6 +426,8 @@ export const DeleteFieldModal: React.FC<{
 }> = ({ visible, onClose }) => {
   const { projectId } = useParams()
   const ctx = useConcent('schema')
+  const contentCtx = useConcent('content')
+  const [loading, setLoading] = useState(false)
 
   const {
     state: { currentSchema, selectedField },
@@ -403,7 +439,12 @@ export const DeleteFieldModal: React.FC<{
       destroyOnClose
       visible={visible}
       title={`删除【${selectedField?.displayName}】字段`}
+      okButtonProps={{
+        loading,
+      }}
       onOk={async () => {
+        setLoading(true)
+
         const fields = currentSchema.fields || []
         const index = fields.findIndex(
           (_: any) => _.id === selectedField.id || _.name === selectedField.name
@@ -414,15 +455,17 @@ export const DeleteFieldModal: React.FC<{
         }
 
         try {
-          await updateSchema(currentSchema?._id, {
+          await updateSchema(projectId, currentSchema?._id, {
             fields,
           })
           message.success('删除字段成功')
           ctx.dispatch('getSchemas', projectId)
+          contentCtx.dispatch('getContentSchemas', projectId)
         } catch (error) {
           message.error('删除字段失败')
         } finally {
           onClose()
+          setLoading(false)
         }
       }}
       onCancel={() => onClose()}

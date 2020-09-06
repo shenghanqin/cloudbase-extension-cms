@@ -20,11 +20,15 @@ import {
 import moment from 'moment'
 import { useParams, useRequest } from 'umi'
 import { Rule } from 'antd/es/form'
+import 'moment/locale/zh-cn'
+import locale from 'antd/es/date-picker/locale/zh_CN'
 import { getSchema } from '@/services/schema'
 import { getContents } from '@/services/content'
-import { getTempFileURL, uploadFile, downloadFile } from '@/utils'
-import { InboxOutlined, MinusCircleOutlined, PlusOutlined } from '@ant-design/icons'
+import { getTempFileURL, uploadFile, downloadFile, copyToClipboard } from '@/utils'
+import { InboxOutlined, MinusCircleOutlined, PlusOutlined, CopyTwoTone } from '@ant-design/icons'
+
 import RichTextEditor from './RichText'
+import { useConcent } from 'concent'
 
 const MarkdownEditor = React.lazy(() => import('./Markdown'))
 
@@ -42,11 +46,12 @@ const LazyMarkdownEditor: React.FC = (props: any) => (
  * 图片懒加载
  */
 export const LazyImage: React.FC<{ src: string }> = ({ src }) => {
-  if (!src)
+  if (!src) {
     return <Empty image="/img/empty.svg" imageStyle={{ height: '60px' }} description="未设定图片" />
+  }
 
   if (!/^cloud:\/\/\S+/.test(src)) {
-    return <img style={{ height: '100px' }} src={src} />
+    return <img style={{ height: '120px', maxWidth: '200px' }} src={src} />
   }
 
   const [imgUrl, setImgUrl] = useState('')
@@ -71,16 +76,41 @@ export const LazyImage: React.FC<{ src: string }> = ({ src }) => {
     <Spin />
   ) : (
     <Space direction="vertical">
-      <img style={{ height: '120px' }} src={imgUrl} />
+      <img style={{ height: '120px', maxWidth: '200px' }} src={imgUrl} />
       {imgUrl && (
-        <Button
-          size="small"
-          onClick={() => {
-            downloadFile(src)
-          }}
-        >
-          下载图片
-        </Button>
+        <Space>
+          <Button
+            size="small"
+            onClick={() => {
+              downloadFile(src)
+            }}
+          >
+            下载图片
+          </Button>
+          <Button
+            size="small"
+            onClick={() => {
+              getTempFileURL(src)
+                .then((url) => {
+                  copyToClipboard(url)
+                    .then(() => {
+                      message.success('复制到剪切板成功')
+                    })
+                    .catch(() => {
+                      message.error('复制到剪切板成功')
+                    })
+                })
+                .catch((e) => {
+                  console.log(e)
+                  console.log(e.message)
+                  message.error(`获取图片链接失败 ${e.message}`)
+                })
+            }}
+          >
+            访问链接
+            <CopyTwoTone />
+          </Button>
+        </Space>
       )}
     </Space>
   )
@@ -92,20 +122,31 @@ export const CustomUploader: React.FC<{
   value?: string
   onChange?: (v: string) => void
 }> = (props) => {
-  let { value: fileId, type, onChange = () => {} } = props
+  let { value: fileUrl, type, onChange = () => {} } = props
+
+  if (fileUrl && !/^cloud:\/\/\S+/.test(fileUrl)) {
+    return (
+      <>
+        <Input type="url" value={fileUrl} onChange={(e) => onChange(e.target.value)} />
+        {type === 'image' && <img style={{ height: '120px', marginTop: '10px' }} src={fileUrl} />}
+      </>
+    )
+  }
+
   const [fileList, setFileList] = useState<any[]>()
   const [percent, setPercent] = useState(0)
   const [uploading, setUploading] = useState(false)
 
   // 加载图片预览
   useEffect(() => {
-    if (!fileId || type === 'file') return
-    getTempFileURL(fileId)
+    if (!fileUrl || type === 'file') return
+
+    getTempFileURL(fileUrl)
       .then((url: string) => {
         setFileList([
           {
             url,
-            uid: fileId,
+            uid: fileUrl,
             name: `已上传${type === 'file' ? '文件' : '图片'}`,
             status: 'done',
           },
@@ -114,7 +155,7 @@ export const CustomUploader: React.FC<{
       .catch((e) => {
         message.error(`加载图片失败 ${e.message}`)
       })
-  }, [fileId])
+  }, [fileUrl])
 
   return (
     <>
@@ -125,13 +166,13 @@ export const CustomUploader: React.FC<{
           setUploading(true)
           setPercent(0)
           // 上传文件
-          fileId = await uploadFile(file, (percent) => {
+          fileUrl = await uploadFile(file, (percent) => {
             setPercent(percent)
           })
-          onChange(fileId)
+          onChange(fileUrl)
           setFileList([
             {
-              uid: fileId,
+              uid: fileUrl,
               name: file.name,
               status: 'done',
             },
@@ -153,16 +194,17 @@ export const CustomUploader: React.FC<{
 export const CustomDatePicker: React.FC<{
   type?: string
   value?: string
-  onChange?: (v: string) => void
+  onChange?: (v: string | number) => void
 }> = (props) => {
   let { type, value, onChange = () => {} } = props
 
   return (
     <DatePicker
+      locale={locale}
+      value={value ? moment(value) : null}
       showTime={type === 'DateTime'}
-      value={moment(value)}
       format={type === 'DateTime' ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'}
-      onChange={(_, v) => onChange(v)}
+      onChange={(_, v) => onChange(moment(v).valueOf())}
     />
   )
 }
@@ -183,7 +225,9 @@ export const ConnectRender: React.FC<{
     return <Typography.Text>{value[connectField]}</Typography.Text>
   }
 
-  return value.map((record: any, index: number) => <Tag key={index}>{record[connectField]}</Tag>)
+  return value
+    .filter((_: any) => _)
+    .map((record: any, index: number) => <Tag key={index}>{record?.[connectField]}</Tag>)
 }
 
 /**
@@ -195,6 +239,7 @@ export const ConnectEditor: React.FC<{
   onChange?: (v: string) => void
 }> = (props) => {
   const { projectId } = useParams()
+  const ctx = useConcent('content')
   const { value, onChange, field } = props
   const { connectField, connectResource, connectMany } = field
   const [records, setRecords] = useState<Record<string, any>>([])
@@ -202,7 +247,15 @@ export const ConnectEditor: React.FC<{
 
   useRequest(
     async () => {
-      const { data: schema } = await getSchema(projectId, connectResource)
+      const { schemas } = ctx.state
+      let schema = schemas.find((_: SchemaV2) => _._id === connectResource)
+
+      // 后台获取 Schema
+      if (!schema) {
+        const { data } = await getSchema(projectId, connectResource)
+        schema = data
+      }
+
       const { data } = await getContents(projectId, schema.collectionName, {
         page: 1,
         pageSize: 1000,
@@ -239,7 +292,9 @@ export const ConnectEditor: React.FC<{
           </Option>
         ))
       ) : (
-        <Option value="">空</Option>
+        <Option value="" disabled>
+          空
+        </Option>
       )}
     </Select>
   )
@@ -278,7 +333,7 @@ export function getFieldRender(field: SchemaFieldV2) {
         index: number,
         action: any
       ): React.ReactNode | React.ReactNode[] => {
-        return <Typography.Text>{text ? 'True' : 'False'}</Typography.Text>
+        return <Typography.Text>{record[name] ? 'True' : 'False'}</Typography.Text>
       }
     case 'Number':
       return (
@@ -571,7 +626,9 @@ export function getFieldFormItem(field: SchemaFieldV2, key: number) {
                 </Option>
               ))
             ) : (
-              <Option value="">空</Option>
+              <Option value="" disabled>
+                空
+              </Option>
             )}
           </Select>
         </Form.Item>
@@ -647,6 +704,7 @@ export function getFieldFormItem(field: SchemaFieldV2, key: number) {
       )
   }
 
+  // 弹性布局
   if (type === 'Markdown' || type === 'RichText') {
     return (
       <Col xs={24} sm={24} md={24} lg={24} xl={24} key={key}>
@@ -656,7 +714,7 @@ export function getFieldFormItem(field: SchemaFieldV2, key: number) {
   }
 
   return (
-    <Col xs={24} sm={24} md={12} lg={12} xl={12} key={key}>
+    <Col xs={24} sm={24} md={12} lg={12} xl={12} xxl={8} key={key}>
       {FormItem}
     </Col>
   )

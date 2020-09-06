@@ -1,8 +1,10 @@
-import { message, notification } from 'antd'
+import moment from 'moment'
 import { request, history } from 'umi'
+import { message, notification } from 'antd'
 import { RequestOptionsInit } from 'umi-request'
-import { isDevEnv } from './tool'
 import { codeMessage } from '@/constants'
+import { isDevEnv, random } from './tool'
+import defaultSettings from '../../config/defaultSettings'
 
 let app: any
 let auth: any
@@ -63,7 +65,7 @@ export async function tcbRequest<T = any>(
   const res = await app.callFunction({
     name: 'tcb-ext-cms-service',
     data: {
-      path: `/api${url}`,
+      path: `${defaultSettings.globalPrefix}${url}`,
       httpMethod: method,
       queryStringParameters: params,
       body: data,
@@ -87,11 +89,11 @@ export async function tcbRequest<T = any>(
     body = {}
   }
 
-  if (body?.code) {
+  if (body?.error) {
     const errorText = codeMessage[res.result?.statusCode || 500]
     notification.error({
       message: errorText,
-      description: `请求错误：${status}: ${url}`,
+      description: `请求错误：【${body.error.code}】: ${body.error.message}`,
     })
     throw new Error('服务异常')
   }
@@ -102,10 +104,11 @@ export async function tcbRequest<T = any>(
 // 上传文件
 export async function uploadFile(file: File, onProgress: (v: number) => void): Promise<string> {
   const app = await getCloudBaseApp()
+  const day = moment().format('YYYY-MM-DD')
 
   const result = await app.uploadFile({
-    cloudPath: `upload/${Date.now()}-${file.name}`,
     filePath: file,
+    cloudPath: `cloudbase-cms/upload/${day}/${random(32)}-${file.name}`,
     onUploadProgress: (progressEvent: ProgressEvent) => {
       const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
       onProgress(percentCompleted)

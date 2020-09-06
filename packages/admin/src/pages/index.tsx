@@ -20,7 +20,7 @@ import { history, useRequest, useAccess } from 'umi'
 import AvatarDropdown from '@/components/AvatarDropdown'
 import { getProjects, createProject } from '@/services/project'
 import logo from '@/assets/logo.svg'
-import styles from './index.less'
+import './index.less'
 
 const { Header, Content, Footer } = Layout
 
@@ -33,80 +33,73 @@ export default (): React.ReactNode => {
 
   const { isAdmin } = useAccess()
 
-  if (loading) {
-    return <Skeleton active />
-  }
-
   return (
-    <Layout className={styles.home}>
-      <Header className={styles.header}>
-        <img className={styles.logo} src={logo} alt="logo" />
-        <span className={styles.title}>CloudBase CMS</span>
-        <div className={styles.account}>
+    <ContentWrapper loading={loading}>
+      <Row gutter={[24, 40]}>
+        <Col>
+          <Typography.Title level={3}>我的项目</Typography.Title>
+        </Col>
+      </Row>
+      <Row gutter={[36, 36]}>
+        {data.map((project: any, index: any) => (
+          <Col flex="0 0 224px" key={index}>
+            <Card
+              hoverable
+              onClick={() => {
+                ctx.setState({
+                  currentProject: project,
+                })
+                history.push(`/${project._id}/home`)
+              }}
+            >
+              <div
+                className="project"
+                onClick={() => {
+                  history.push('/home')
+                }}
+              >
+                <div className="project-logo">{project.name.slice(0, 2)}</div>
+                <Tooltip title={project.name}>
+                  <Typography.Title ellipsis level={4} className="project-title">
+                    {project.name}
+                  </Typography.Title>
+                </Tooltip>
+              </div>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+      {isAdmin && <CreateProject onReload={() => setReload(reload + 1)} />}
+    </ContentWrapper>
+  )
+}
+
+const ContentWrapper: React.FC<{ loading: boolean }> = ({ children, loading }) => {
+  return (
+    <Layout className="home">
+      <Header className="header">
+        <img className="logo" src={logo} alt="logo" />
+        <h1 className="title">CloudBase CMS</h1>
+        <div className="account">
           <AvatarDropdown />
         </div>
       </Header>
-      <Content className={styles.content}>
+      <Content className="content">
         <Row>
-          <Col
-            xs={{ offset: 2 }}
-            md={{ offset: 4 }}
-            lg={{ offset: 6 }}
-            xl={{ offset: 6 }}
-            xxl={{ offset: 8 }}
-          />
+          <Col flex="2 1 auto" />
           <Col flex="1 1 auto">
-            <Row gutter={[24, 40]}>
-              <Col>
-                <Typography.Title level={3}>我的项目</Typography.Title>
-              </Col>
-            </Row>
-            <Row gutter={[64, 40]}>
-              {data.map((project: any, index: any) => (
-                <Col flex="0 1 250px" key={index}>
-                  <Card
-                    hoverable
-                    onClick={() => {
-                      ctx.setState({
-                        currentProject: project,
-                      })
-                      history.push(`/${project._id}/home`)
-                    }}
-                  >
-                    <div
-                      className={styles.project}
-                      onClick={() => {
-                        history.push('/home')
-                      }}
-                    >
-                      <div className={styles['project-logo']}>{project.name.slice(0, 2)}</div>
-                      <Tooltip title={project.name}>
-                        <Typography.Title ellipsis level={4} className={styles['project-title']}>
-                          {project.name}
-                        </Typography.Title>
-                      </Tooltip>
-                      <Tooltip title={project.description}>
-                        <Typography.Paragraph ellipsis className={styles['project-desc']}>
-                          {project.description}
-                        </Typography.Paragraph>
-                      </Tooltip>
-                    </div>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-            {isAdmin && <CreateProject onReload={() => setReload(reload + 1)} />}
+            {loading ? (
+              <div style={{ minWidth: '600px' }}>
+                <Skeleton active />
+              </div>
+            ) : (
+              children
+            )}
           </Col>
-          <Col
-            xs={{ offset: 2 }}
-            md={{ offset: 4 }}
-            lg={{ offset: 6 }}
-            xl={{ offset: 6 }}
-            xxl={{ offset: 8 }}
-          />
+          <Col flex="2 1 auto" />
         </Row>
       </Content>
-      <Footer className={styles.footer}>CloudBase CMS 2.0.0</Footer>
+      <Footer className="footer">CloudBase CMS 2.0.0</Footer>
     </Layout>
   )
 }
@@ -123,17 +116,17 @@ export const CreateProject: React.FC<{
           <Typography.Title level={3}>新建项目</Typography.Title>
         </Col>
       </Row>
-      <Row gutter={[64, 40]}>
-        <Col flex="0 1 250px">
+      <Row gutter={[36, 40]}>
+        <Col flex="0 0 224px">
           <Card
             hoverable
             onClick={() => {
               setModalVisible(true)
             }}
           >
-            <div className={styles.project} onClick={() => {}}>
+            <div className="project" onClick={() => {}}>
               <PlusSquareTwoTone style={{ fontSize: '60px' }} />
-              <Typography.Title level={4} className={styles['project-title']}>
+              <Typography.Title level={4} className="project-title">
                 创建新项目
               </Typography.Title>
             </div>
@@ -192,11 +185,25 @@ export const CreateProjectModal: React.FC<{
           name="name"
           rules={[{ required: true, message: '请输入项目名！' }]}
         >
-          <Input placeholder="项目名，如个人博客" />
+          <Input placeholder="项目名，如官网" />
+        </Form.Item>
+
+        <Form.Item
+          label="项目 Id"
+          name="customId"
+          rules={[
+            { required: true, message: '请输入项目 Id！' },
+            {
+              pattern: /^[a-zA-Z0-9]{1,16}$/,
+              message: '项目 Id 仅支持字母与数字，不大于 16 个字符',
+            },
+          ]}
+        >
+          <Input placeholder="项目 Id，如 website，仅支持字母与数字，不大于 16 个字符" />
         </Form.Item>
 
         <Form.Item label="项目介绍" name="description">
-          <Input placeholder="项目介绍，如我的个人博客" />
+          <Input placeholder="项目介绍，如官网内容管理" />
         </Form.Item>
 
         <Form.Item>

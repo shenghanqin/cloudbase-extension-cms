@@ -3,7 +3,7 @@ import dayjs from 'dayjs'
 import { nanoid } from 'nanoid'
 import { IFile } from './types'
 import { Injectable } from '@nestjs/common'
-import { CloudBaseService } from '@/dynamic_modules'
+import { CloudBaseService } from '@/services'
 import 'dayjs/locale/zh-cn'
 
 // 本地时间
@@ -31,7 +31,7 @@ export class FileService {
     const day = dayjs().format('YYYY-MM-DD')
     // 上传文件
     const { fileID } = await this.cloudbaseService.app.uploadFile({
-      cloudPath: `tcb-cms/${day}/${nanoid(32)}${path.extname(file.originalname)}`,
+      cloudPath: `cloudbase-cms/upload/${day}/${nanoid(16)}-${file.originalname}`,
       fileContent: file.buffer,
     })
     return {

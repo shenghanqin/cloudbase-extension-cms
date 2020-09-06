@@ -1,22 +1,11 @@
 import React, { useState } from 'react'
 import { useRequest, useParams, history } from 'umi'
 import { getProject, updateProject, deleteProject } from '@/services/project'
-import {
-  Row,
-  Col,
-  Divider,
-  Button,
-  Space,
-  Typography,
-  Form,
-  Input,
-  Skeleton,
-  Modal,
-  message,
-} from 'antd'
-import styles from './index.less'
+import { Divider, Button, Space, Typography, Form, Input, Skeleton, Modal, message } from 'antd'
+import './index.less'
 
 interface Project {
+  _id: string
   name: string
   description: string
 }
@@ -67,10 +56,15 @@ const ProjectDangerAction: React.FC<{ project: Project }> = ({ project }) => {
         }}
       >
         <Space direction="vertical">
-          <Typography.Paragraph>
+          <Typography.Paragraph strong>
+            删除项目会删除项目中的内容模型及 Webhooks 等数据
+          </Typography.Paragraph>
+          <Typography.Paragraph strong>
             删除项目是不能恢复的，您确定要删除此项目吗？
             如果您想继续，请在下面的方框中输入此项目的名称：
-            <Typography.Text strong>{project.name}</Typography.Text>
+            <Typography.Text strong mark>
+              {project.name}
+            </Typography.Text>
           </Typography.Paragraph>
           <Input value={projectName} onChange={(e) => setProjectName(e.target.value)} />
         </Space>
@@ -124,6 +118,9 @@ export default (): React.ReactElement => {
           }
         }}
       >
+        <Form.Item label="项目 Id">
+          <Typography.Paragraph copyable>{project?._id}</Typography.Paragraph>
+        </Form.Item>
         <Form.Item
           label="项目名"
           name="name"
@@ -132,11 +129,7 @@ export default (): React.ReactElement => {
           <Input placeholder="项目名，如个人博客" />
         </Form.Item>
 
-        <Form.Item
-          label="项目介绍"
-          name="description"
-          rules={[{ required: true, message: '请输入项目介绍！' }]}
-        >
+        <Form.Item label="项目介绍" name="description">
           <Input placeholder="项目介绍，如我的个人博客" />
         </Form.Item>
 

@@ -3,35 +3,27 @@ import { ConfigModule } from '@nestjs/config'
 import { AppController } from '@/app.controller'
 import { AppService } from '@/app.service'
 import { BodyConverter } from '@/middlewares/converter.middleware'
-import { CloudBaseModule } from '@/dynamic_modules/cloudbase'
-import { SchemaModule } from './modules/schema/schema.module'
 import { FileModule } from './modules/file/file.module'
 import { AuthModule } from './modules/auth/auth.module'
-import { ProjectModule } from './modules/project/project.module'
-import { ContentModule } from './modules/content/content.module'
+import { ProjectsModule } from './modules/projects/projects.module'
 import { UserModule } from './modules/user/user.module'
-import { WebhookModule } from './modules/webhook/webhook.module'
 import { RoleModule } from './modules/role/role.module'
+import { SettingModule } from './modules/setting/setting.module'
+import { GlobalModule } from './global.module'
 
 @Module({
   imports: [
+    GlobalModule,
     AuthModule,
     FileModule,
     UserModule,
-    SchemaModule,
-    ProjectModule,
-    ContentModule,
-    WebhookModule,
+    ProjectsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'development' ? '.env.local' : '.env',
     }),
-    CloudBaseModule.forRoot({
-      envId: process.env.TCB_ENVID,
-      secretId: process.env.SECRETID,
-      secretKey: process.env.SECRETKEY,
-    }),
     RoleModule,
+    SettingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -75,7 +75,7 @@ export default (): React.ReactElement => {
                 const role = roles?.find((_: any) => _._id === roleId)
 
                 return (
-                  <Tag key={index} color="#006eff">
+                  <Tag key={index} color="#2575e6">
                     {role?.roleName}
                   </Tag>
                 )
@@ -130,7 +130,7 @@ export const SystemUserRoles = [
   },
   {
     _id: 'content:administrator',
-    roleName: '系统内容管理员',
+    roleName: '内容管理员',
     description: '允许管理系统内的所有内容',
     polices: [
       {
@@ -222,13 +222,13 @@ const CreateUserModal: React.FC<{
             },
           ]}
         >
-          <Input placeholder="用户名" />
+          <Input placeholder="用户名，字母和数字的组合，不能为纯数字，长度范围是 1 ~ 32" />
         </Form.Item>
         <Form.Item
           label="用户密码"
           name="password"
           rules={[
-            { required: true, min: 8, max: 32, message: '密码长度必需大于 8 位' },
+            { required: action === 'create', min: 8, max: 32, message: '密码长度必需大于 8 位' },
             {
               pattern: /\D+/,
               message: '密码不能由纯数字或字母组成',
@@ -240,7 +240,7 @@ const CreateUserModal: React.FC<{
           ]}
         >
           <Input.Password
-            placeholder="输入密码"
+            placeholder="密码长度必需大于 8 位，不能由纯数字或纯字母组成"
             visibilityToggle={action === 'create'}
             iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
           />
