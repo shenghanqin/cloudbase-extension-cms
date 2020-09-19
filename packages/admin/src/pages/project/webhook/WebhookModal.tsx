@@ -28,7 +28,7 @@ export const WebhookModal: React.FC<{
   onClose: () => void
   onSuccess: () => void
 }> = ({ visible, onClose, onSuccess, action, selectedWebhook }) => {
-  const { projectId } = useParams()
+  const { projectId } = useParams<any>()
   const actionText = action === 'create' ? '创建' : '更新'
 
   const { run, loading } = useRequest(
@@ -162,7 +162,6 @@ export const WebhookModal: React.FC<{
 
         <Form.Item label="HTTP 方法" name="method">
           <Select>
-            <Select.Option value="GET">GET</Select.Option>
             <Select.Option value="POST">POST</Select.Option>
             <Select.Option value="UPDATE">UPDATE</Select.Option>
             <Select.Option value="DELETE">DELETE</Select.Option>

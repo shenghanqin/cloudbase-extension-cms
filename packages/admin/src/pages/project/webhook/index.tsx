@@ -105,7 +105,7 @@ const columns: ProColumns<Webhook>[] = WebhookColumns.map((item) => ({
 }))
 
 export default (): React.ReactNode => {
-  const { projectId } = useParams()
+  const { projectId } = useParams<any>()
   const [modalVisible, setModalVisible] = useState(false)
   const [webhookAction, setWebhookAction] = useState<'create' | 'edit'>('create')
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook>()
@@ -237,9 +237,9 @@ export default (): React.ReactNode => {
             ]}
           />
         </TabPane>
-        <TabPane tab="执行日志" key="log">
+        {/* <TabPane tab="执行日志" key="log">
           开发中
-        </TabPane>
+        </TabPane> */}
       </Tabs>
       <WebhookModal
         visible={modalVisible}

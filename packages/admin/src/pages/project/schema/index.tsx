@@ -16,7 +16,6 @@ import {
   Empty,
   Space,
   Typography,
-  Tooltip,
 } from 'antd'
 import { FieldTypes } from '@/common'
 import { PageContainer } from '@ant-design/pro-layout'
@@ -40,7 +39,7 @@ export interface TableListItem {
 
 export default (): React.ReactNode => {
   // projectId
-  const { projectId } = useParams()
+  const { projectId } = useParams<any>()
   const ctx = useConcent('schema')
   const {
     state: { currentSchema, schemas, loading },

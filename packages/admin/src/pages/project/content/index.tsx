@@ -8,7 +8,7 @@ import { ContentTable } from './ContentTable'
 import './index.less'
 
 export default (): React.ReactNode => {
-  const { schemaId, projectId } = useParams()
+  const { schemaId, projectId } = useParams<any>()
   const ctx = useConcent('content')
   const [contentLoading, setContentLoading] = useState(false)
 
@@ -30,6 +30,7 @@ export default (): React.ReactNode => {
     <PageContainer
       className="page-container"
       content={
+        // 渲染内容描述
         <div
           dangerouslySetInnerHTML={{
             __html: currentSchema?.description,
