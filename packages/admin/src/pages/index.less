@@ -1,0 +1,109 @@
+.home {
+  height: 100%;
+
+  .header {
+    position: relative;
+    background: #262f3e;
+    background: -webkit-linear-gradient(to right, #262f3e, #536976);
+    background: linear-gradient(to right, #262f3e, #536976);
+
+    color: #fff;
+    box-shadow: 0 2px 8px #f0f1f2;
+    font-weight: bolder;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+
+    .title {
+      color: #fff;
+      height: 32px;
+      line-height: 32px;
+      margin-bottom: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .left {
+      display: flex;
+      align-items: center;
+
+      h1 {
+        margin: 0 0 0 12px;
+      }
+    }
+
+    .right {
+      position: absolute;
+      right: 40px;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo {
+      width: 35px;
+      height: 35px;
+    }
+  }
+
+  .ant-card-body {
+    min-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .help-btn {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+  }
+
+  .content {
+    padding: 30px 0;
+
+    .empty-tip {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+  }
+}
+
+.footer {
+  text-align: center;
+}
+
+.project {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  // margin: 20px 10px;
+
+  &-title {
+    margin-top: 1em;
+    max-width: 100px;
+  }
+
+  &-desc {
+    max-width: 100px;
+    height: 30px;
+  }
+
+  &-logo {
+    background-color: #262f3e;
+    color: rgb(255, 255, 255);
+    font-size: 32px;
+    line-height: 80px;
+    text-align: center;
+    font-weight: 600;
+    width: 80px;
+    height: 80px;
+    min-height: 80px;
+    min-width: 80px;
+    display: block;
+    border-radius: 8px;
+  }
+}
